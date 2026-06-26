@@ -7,7 +7,7 @@ API_URL = "http://127.0.0.1:8000/analyze-ticket"
 
 
 
-# Load test cases
+# Load official test cases
 
 with open(
     "sample_data/test_cases.json",
@@ -15,79 +15,97 @@ with open(
     encoding="utf-8"
 ) as file:
 
-    test_cases = json.load(file)
+    data = json.load(file)
+
+
+
+cases = data["cases"]
 
 
 
 print(
-    f"\nRunning {len(test_cases)} test cases...\n"
+    f"\nRunning {len(cases)} test cases...\n"
 )
 
 
 
-for case in test_cases:
+for case in cases:
+
+
+    ticket = case["input"]
 
 
     response = requests.post(
+
         API_URL,
-        json=case
+
+        json=ticket
+
     )
 
 
-    print("=" * 50)
+    print("=" * 60)
 
 
     print(
-        "Ticket:",
-        case["ticket_id"]
+        "Ticket ID:",
+        ticket["ticket_id"]
     )
 
 
     if response.status_code == 200:
 
+
         result = response.json()
+
 
 
         print(
             "Case Type:",
-            result["case_type"]
+            result.get("case_type")
         )
 
 
         print(
             "Severity:",
-            result["severity"]
+            result.get("severity")
         )
 
 
         print(
             "Department:",
-            result["department"]
+            result.get("department")
         )
 
 
         print(
             "Evidence:",
-            result["evidence_verdict"]
+            result.get("evidence_verdict")
         )
 
 
         print(
             "Human Review:",
-            result["human_review_required"]
+            result.get("human_review_required")
+        )
+
+
+        print(
+            "Confidence:",
+            result.get("confidence")
         )
 
 
     else:
 
+
         print(
-            "Error:",
+            "ERROR:",
             response.text
         )
 
 
-print("=" * 50)
 
-print(
-    "\nTesting completed."
-)
+print("=" * 60)
+
+print("\nTesting completed.")

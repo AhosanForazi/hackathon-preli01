@@ -19,16 +19,18 @@ app = FastAPI(
     ),
 
     version="1.0.0"
+
 )
 
 
 
 # -----------------------------
-# Health Check Endpoint
+# Health Check
 # -----------------------------
 
 @app.get("/health")
 def health():
+
 
     return {
 
@@ -39,12 +41,13 @@ def health():
 
         "version":
             "1.0.0"
+
     }
 
 
 
 # -----------------------------
-# Complaint Analysis Endpoint
+# Analyze Ticket
 # -----------------------------
 
 @app.post(
@@ -52,7 +55,9 @@ def health():
     response_model=TicketResponse
 )
 def analyze(
+
     ticket: TicketRequest
+
 ):
 
     return analyze_ticket(

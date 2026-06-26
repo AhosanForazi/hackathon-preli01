@@ -1,98 +1,151 @@
-def generate_safe_reply(case_type, txn_id):
+# Safety layer for AI generated responses
 
 
-    if case_type == "phishing_or_social_engineering":
-
-        return (
-            "Please do not share OTP, PIN, or password with anyone. "
-            "Our security team will review this case."
-        )
+def validate_response(response):
 
 
-    if case_type == "payment_failed":
+    # -----------------------------
+    # Prevent unsafe refund confirmation
+    # -----------------------------
 
-        return (
-            f"We have received your concern regarding {txn_id}. "
-            "Our team will verify the transaction status."
-        )
+    unsafe_refund_words = [
 
+        "refund approved",
+        "refund confirmed",
+        "money has been refunded",
+        "reversal completed"
 
-    if case_type == "duplicate_payment":
-
-        return (
-            f"We have received your duplicate payment concern regarding {txn_id}. "
-            "Our team will investigate the transaction records."
-        )
-
-
-    if case_type == "wrong_transfer":
-
-        return (
-            f"We have received your transfer concern regarding {txn_id}. "
-            "Our support team will review the transaction details."
-        )
-
-
-    return (
-        f"We have received your request regarding {txn_id}. "
-        "Our support team will review the case."
-    )
-
-
-
-# Safety layer for AI output
-
-def validate_response(data):
-
-
-    forbidden_words = [
-        "otp",
-        "pin",
-        "password",
-        "card number"
     ]
 
 
-    reply = data.get(
+    customer_reply = response.get(
         "customer_reply",
         ""
     ).lower()
 
 
 
-    for word in forbidden_words:
+    for word in unsafe_refund_words:
 
-        if word in reply:
+        if word in customer_reply:
 
-            data["customer_reply"] = (
-                "Please do not share sensitive credentials. "
-                "Our support team will assist you through official channels."
+            response["customer_reply"] = (
+                "Your request has been received. "
+                "Our support team will review the "
+                "transaction details and provide an update."
             )
 
-            break
 
 
+    # -----------------------------
+    # Prevent credential requests
+    # -----------------------------
 
-    # Never allow fake confirmation
+    blocked_words = [
 
-    risky_words = [
-        "refund completed",
-        "money returned",
-        "reversal completed"
+        "send otp",
+        "share otp",
+        "provide pin",
+        "give password",
+        "share credential"
+
     ]
 
 
-    for word in risky_words:
+    for word in blocked_words:
 
-        if word in reply:
+        if word in customer_reply:
 
-            data["customer_reply"] = (
-                "Your request has been received. "
-                "Our team will review the case and update you."
+            response["customer_reply"] = (
+                "For your security, "
+                "please do not share OTP, PIN, "
+                "password, or any sensitive credentials."
             )
 
-            break
+
+
+    # -----------------------------
+    # Force human review for high risk
+    # -----------------------------
+
+    if response.get(
+        "case_type"
+    ) == "phishing_or_social_engineering":
+
+
+        response["human_review_required"] = True
+
+
+        response["severity"] = "critical"
 
 
 
-    return data
+    return response
+
+
+
+
+
+def generate_safe_reply(
+        case_type,
+        transaction_id
+):
+
+
+    replies = {
+
+
+        "wrong_transfer":
+            (
+                "We have received your transfer concern. "
+                "Our support team will review the "
+                "transaction details."
+            ),
+
+
+
+        "payment_failed":
+            (
+                "We received your payment issue. "
+                "The transaction status will be reviewed "
+                "by our support team."
+            ),
+
+
+
+        "duplicate_payment":
+            (
+                "We received your duplicate payment concern. "
+                "Our team will investigate the transaction."
+            ),
+
+
+
+        "phishing_or_social_engineering":
+            (
+                "For your security, do not share OTP, "
+                "PIN, password, or credentials. "
+                "Our fraud team will review this case."
+            ),
+
+
+
+        "refund_request":
+            (
+                "Your refund request has been received. "
+                "Our team will review eligibility "
+                "according to policy."
+            )
+
+    }
+
+
+
+    return replies.get(
+
+        case_type,
+
+        "Your request has been received. "
+        "Our support team will review the details."
+
+    )

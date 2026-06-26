@@ -3,10 +3,6 @@ from typing import List, Optional
 
 
 
-# -----------------------------
-# Transaction Schema
-# -----------------------------
-
 class Transaction(BaseModel):
 
     transaction_id: str
@@ -23,10 +19,6 @@ class Transaction(BaseModel):
 
 
 
-# -----------------------------
-# Ticket Request Schema
-# -----------------------------
-
 class TicketRequest(BaseModel):
 
     ticket_id: str
@@ -41,15 +33,13 @@ class TicketRequest(BaseModel):
 
     campaign_context: Optional[str] = None
 
+    metadata: Optional[dict] = None
+
     transaction_history: List[Transaction] = Field(
         default_factory=list
     )
 
 
-
-# -----------------------------
-# Ticket Response Schema
-# -----------------------------
 
 class TicketResponse(BaseModel):
 
@@ -65,19 +55,14 @@ class TicketResponse(BaseModel):
 
     department: str
 
-
     agent_summary: str
 
     recommended_next_action: str
 
-
     customer_reply: str
-
 
     human_review_required: bool
 
+    confidence: Optional[float] = 0.0
 
-    confidence: float
-
-
-    reason_codes: List[str]
+    reason_codes: Optional[List[str]] = []

@@ -12,14 +12,20 @@ from .safety import validate_response
 
 def analyze_ticket(ticket):
 
+
     # -----------------------------
-    # Step 1: Rule based analysis
+    # Step 1: Classification
     # -----------------------------
 
     case_type = detect_case_type(
         ticket.complaint
     )
 
+
+
+    # -----------------------------
+    # Step 2: Transaction Evidence
+    # -----------------------------
 
     transaction_id = None
 
@@ -31,11 +37,12 @@ def analyze_ticket(ticket):
     )
 
 
-    # Transaction evidence checking
 
     if ticket.transaction_history:
 
+
         verdict = "inconsistent"
+
 
 
         for txn in ticket.transaction_history:
@@ -43,7 +50,11 @@ def analyze_ticket(ticket):
 
             if amount and txn.amount == amount:
 
-                transaction_id = txn.transaction_id
+
+                transaction_id = (
+                    txn.transaction_id
+                )
+
 
                 verdict = "consistent"
 
@@ -51,8 +62,9 @@ def analyze_ticket(ticket):
 
 
 
+
     # -----------------------------
-    # Step 2: Risk calculation
+    # Step 3: Risk Assessment
     # -----------------------------
 
     severity = "medium"
@@ -60,10 +72,17 @@ def analyze_ticket(ticket):
     human_review = False
 
 
+
     if case_type in [
+
         "wrong_transfer",
-        "duplicate_payment"
+
+        "duplicate_payment",
+
+        "refund_request"
+
     ]:
+
 
         severity = "high"
 
@@ -71,7 +90,9 @@ def analyze_ticket(ticket):
 
 
 
+
     if case_type == "phishing_or_social_engineering":
+
 
         severity = "critical"
 
@@ -79,83 +100,220 @@ def analyze_ticket(ticket):
 
 
 
+
+    if case_type in [
+
+        "merchant_settlement_delay",
+
+        "agent_cash_in_issue"
+
+    ]:
+
+
+        severity = "high"
+
+        human_review = True
+
+
+
+
+
     # -----------------------------
-    # Step 3: Prepare AI context
+    # Step 4: Build AI Context
     # -----------------------------
 
-    base_result = {
 
-        "ticket_id": ticket.ticket_id,
-
-        "complaint": ticket.complaint,
-
-        "language": ticket.language,
-
-        "channel": ticket.channel,
-
-        "user_type": ticket.user_type,
+    context = {
 
 
-        "relevant_transaction_id":
-            transaction_id,
+        "ticket_id":
+
+            ticket.ticket_id,
 
 
-        "evidence_verdict":
-            verdict,
+        "complaint":
+
+            ticket.complaint,
+
+
+        "language":
+
+            ticket.language,
+
+
+        "channel":
+
+            ticket.channel,
+
+
+        "user_type":
+
+            ticket.user_type,
 
 
         "case_type":
+
             case_type,
 
 
         "severity":
+
             severity,
 
 
         "department":
+
             get_department(case_type),
 
 
+
+        "relevant_transaction_id":
+
+            transaction_id,
+
+
+
+        "evidence_verdict":
+
+            verdict,
+
+
+
         "transaction_history":
+
             [
+
                 txn.model_dump()
-                for txn in ticket.transaction_history
+
+                for txn
+
+                in ticket.transaction_history
+
             ],
 
 
+
         "human_review_required":
+
             human_review
+
     }
 
 
 
+
     # -----------------------------
-    # Step 4: AI reasoning
+    # Step 5: AI Explanation
     # -----------------------------
 
-    ai_result = ask_ai(
-        base_result
+
+    result = ask_ai(
+        context
     )
 
 
 
+
     # -----------------------------
-    # Step 5: Safety validation
+    # Step 6: Safety Layer
     # -----------------------------
 
-    ai_result = validate_response(
-        ai_result
+
+    result = validate_response(
+        result
     )
 
 
 
+
     # -----------------------------
-    # Step 6: Ensure required field
+    # Step 7: Ensure Fields
     # -----------------------------
 
-    ai_result["ticket_id"] = (
+
+    result["ticket_id"] = (
+
         ticket.ticket_id
+
     )
 
 
-    return ai_result
+    result["case_type"] = (
+
+        result.get(
+
+            "case_type",
+
+            case_type
+
+        )
+
+    )
+
+
+    result["severity"] = (
+
+        result.get(
+
+            "severity",
+
+            severity
+
+        )
+
+    )
+
+
+    result["department"] = (
+
+        result.get(
+
+            "department",
+
+            get_department(case_type)
+
+        )
+
+    )
+
+
+    result["evidence_verdict"] = (
+
+        verdict
+
+    )
+
+
+    result["human_review_required"] = (
+
+        human_review
+
+    )
+
+
+    result.setdefault(
+
+        "reason_codes",
+
+        [
+
+            case_type,
+
+            verdict
+
+        ]
+
+    )
+
+
+    result.setdefault(
+
+        "confidence",
+
+        0.85
+
+    )
+
+
+
+    return result
