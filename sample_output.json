@@ -1,0 +1,17 @@
+{
+  "ticket_id": "TKT-001",
+  "relevant_transaction_id": "TXN-9101",
+  "evidence_verdict": "consistent",
+  "case_type": "wrong_transfer",
+  "severity": "high",
+  "department": "dispute_resolution",
+  "agent_summary": "Customer reported a transfer sent to an unintended recipient.",
+  "recommended_next_action": "Verify transfer details and review dispute process.",
+  "customer_reply": "We have received your transfer concern. Our support team will review the transaction details.",
+  "human_review_required": true,
+  "confidence": 0.9,
+  "reason_codes": [
+    "wrong_transfer",
+    "consistent"
+  ]
+}
